@@ -1,0 +1,19 @@
+plugins {
+    id "pl.allegro.tech.build.axion-release" version "1.18.7"
+}
+
+scmVersion {
+    tag.prefix = ""
+    useHighestVersion = true
+    versionIncrementer("incrementMinorIfNotOnRelease", [releaseBranchPattern: "(?>release|(?>hot)?fix)/.+"])
+    branchVersionCreator = [
+        "master": "simple",
+        "release/.*": "simple",
+        ".*": "versionWithBranch"
+    ]
+}
+
+allprojects {
+    group = "io.github.boolivar.sonatype-portal-publish"
+    version = scmVersion.version
+}

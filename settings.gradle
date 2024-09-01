@@ -1,0 +1,3 @@
+rootProject.name = "sonatype-portal-publish"
+
+include("gradle-plugin")
