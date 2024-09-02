@@ -5,7 +5,7 @@ plugins {
 
 gradlePlugin {
     compatibility {
-        minimumGradleVersion = "5.0"
+        minimumGradleVersion = "5.4"
     }
     plugins {
         sonatypePortalPublish {
