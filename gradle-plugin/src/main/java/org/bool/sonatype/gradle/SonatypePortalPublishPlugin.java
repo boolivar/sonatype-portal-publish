@@ -6,7 +6,6 @@ import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.plugins.PublishingPlugin;
-import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
@@ -16,13 +15,13 @@ import java.util.Base64;
 
 public class SonatypePortalPublishPlugin implements Plugin<Project> {
 
-    public static final String MAVEN_CENTRAL_USER_PROPERTY = "sonatype.mavenCentralUser";
+    public static final String MAVEN_CENTRAL_USER_PROPERTY = "sonatypeMavenCentralUser";
 
-    public static final String MAVEN_CENTRAL_PASSWORD_PROPERTY = "sonatype.mavenCentralPassword";
+    public static final String MAVEN_CENTRAL_PASSWORD_PROPERTY = "sonatypeMavenCentralPassword";
 
-    public static final String SIGNING_SECRET_PROPERTY = "sonatype.signingSecret";
+    public static final String SIGNING_KEY_PROPERTY = "sonatypeSigningKey";
 
-    public static final String SIGNING_KEY_PROPERTY = "sonatype.signingKey";
+    public static final String SIGNING_SECRET_PROPERTY = "sonatypeSigningSecret";
 
     public static final String SONATYPE_STAGING_TASK = "publishMavenPublicationToSonatypeStagingRepository";
 
@@ -30,50 +29,48 @@ public class SonatypePortalPublishPlugin implements Plugin<Project> {
 
     public static final String SONATYPE_PUBLISH_TASK = "publishToSonatype";
 
-    private static final String SONATYPE_STAGING_REPO = "sonatypeStaging";
+    public static final String SONATYPE_STAGING_REPO = "sonatypeStaging";
 
     private static final String OUTPUT_DIR = "sonatypePublish";
 
-    private static final String STAGING_DIR = "staging";
-
     public void apply(Project project) {
+        project.getPlugins().apply(MavenPublishPlugin.class);
+        project.getPlugins().apply(SigningPlugin.class);
+
         ExtensionContainer extensions = project.getExtensions();
         extensions.getExtraProperties().set(SonatypePortalPublishTask.class.getSimpleName(), SonatypePortalPublishTask.class);
         SonatypePortalPublishExtension extension = extensions.create(SonatypePortalPublishExtension.NAME, SonatypePortalPublishExtension.class);
         extension.getDir().convention(project.getLayout().getBuildDirectory().dir(OUTPUT_DIR));
 
-        project.getPlugins().withType(MavenPublishPlugin.class, mavenPublish -> {
-            project.getPlugins().apply(SigningPlugin.class);
+        extensions.getByType(PublishingExtension.class).getRepositories().maven(repository -> {
+            repository.setName(SONATYPE_STAGING_REPO);
+            repository.setUrl(extension.getStagingDir());
+        });
 
-            PublishingExtension publishing = extensions.findByType(PublishingExtension.class);
-            publishing.getRepositories().maven(repository -> {
-                repository.setName(SONATYPE_STAGING_REPO);
-                repository.setUrl(extension.getDir().dir(STAGING_DIR));
-            });
+        project.getTasks().register(SONATYPE_ZIP_TASK, Zip.class, zip -> {
+            zip.dependsOn(SONATYPE_STAGING_TASK);
+            zip.from(extension.getStagingDir());
+            zip.exclude("**/maven-metadata.*");
+            zip.getArchiveBaseName().set(project.getName());
+            zip.getDestinationDirectory().set(extension.getDir());
+        });
 
-            extensions.configure(SigningExtension.class, signing -> {
-                signing.sign(publishing.getPublications());
-                if (project.findProperty(SIGNING_KEY_PROPERTY) != null) {
-                    signing.useInMemoryPgpKeys((String) project.property(SIGNING_KEY_PROPERTY), (String) project.property(SIGNING_SECRET_PROPERTY));
-                }
-            });
+        project.getTasks().register(SONATYPE_PUBLISH_TASK, SonatypePortalPublishTask.class, publish -> {
+            publish.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
+            publish.setDescription("Publishes Maven publication to Sonatype Maven Central using Portal Publisher API");
+            publish.getUrl().set(extension.getUrl());
+            publish.getAutoPublish().set(extension.getAutoPublish());
+            publish.getBundle().set(project.getTasks().named(SONATYPE_ZIP_TASK, Zip.class).get().getArchiveFile());
+            publish.getBundleName().set(extension.getBundleName());
+            publish.getToken().set(project.provider(() -> encodeToken(project)));
+        });
 
-            TaskProvider<Zip> zipTask = project.getTasks().register(SONATYPE_ZIP_TASK, Zip.class, zip -> {
-                zip.dependsOn(SONATYPE_STAGING_TASK);
-                zip.from(extension.getDir().dir(STAGING_DIR));
-                zip.exclude("**/maven-metadata.*");
-                zip.getArchiveBaseName().set(project.getName());
-                zip.getDestinationDirectory().set(extension.getDir());
-            });
-
-            project.getTasks().register(SONATYPE_PUBLISH_TASK, SonatypePortalPublishTask.class, publish -> {
-                publish.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
-                publish.setDescription("Publishes Maven publication to Sonatype Maven Central using Portal Publisher API");
-                publish.getUrl().set(extension.getUrl());
-                publish.getAutoPublish().set(extension.getAutoPublish());
-                publish.getBundle().set(zipTask.get().getArchiveFile());
-                publish.getToken().set(project.provider(() -> encodeToken(project)));
-            });
+        project.afterEvaluate(prj -> {
+            SigningExtension signing = prj.getExtensions().getByType(SigningExtension.class);
+            signing.sign(prj.getExtensions().getByType(PublishingExtension.class).getPublications());
+            if (prj.findProperty(SIGNING_KEY_PROPERTY) != null) {
+                signing.useInMemoryPgpKeys((String) prj.property(SIGNING_KEY_PROPERTY), (String) prj.property(SIGNING_SECRET_PROPERTY));
+            }
         });
     }
 

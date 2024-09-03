@@ -1,6 +1,10 @@
 package org.bool.sonatype.gradle;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.gradle.api.Project;
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
+import org.gradle.api.tasks.bundling.Zip;
+import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,12 +28,26 @@ class SonatypePortalPublishPluginTest {
     private File tmpDir;
 
     @Test
-    void testPluginRegistersExtraProperty() {
+    void testPlugin() {
         Project project = ProjectBuilder.builder().build();
         project.getPlugins().apply("io.github.boolivar.sonatype-portal-publish");
 
         assertThat(project.getExtensions().getExtraProperties().get("SonatypePortalPublishTask"))
             .isEqualTo(SonatypePortalPublishTask.class);
+
+        assertThat(project.getExtensions().getExtensionsSchema())
+            .extracting(s -> Pair.of(s.getName(), s.getPublicType().getConcreteClass()))
+            .anyMatch(ext -> "sonatypePublish".equals(ext.getKey()) && SonatypePortalPublishExtension.class.isAssignableFrom(ext.getValue()));
+
+        assertThat(project.getPlugins())
+            .anyMatch(plugin -> MavenPublishPlugin.class.isInstance(plugin))
+            .anyMatch(plugin -> SigningPlugin.class.isInstance(plugin))
+            ;
+
+        assertThat(project.getTasks())
+            .anyMatch(task -> "publishToSonatype".equals(task.getName()) && SonatypePortalPublishTask.class.isInstance(task))
+            .anyMatch(task -> "sonatypeStagingZip".equals(task.getName()) && Zip.class.isInstance(task))
+            ;
     }
 
     @Test
@@ -37,8 +55,7 @@ class SonatypePortalPublishPluginTest {
         server.when(HttpRequest.request(PATH)
                 .withHeader("Authorization", "Bearer <username:password>")
                 .withHeader("Content-Type", "multipart/form-data; boundary=abcdef")
-            )
-            .respond(HttpResponse.response("OK").withStatusCode(200));
+            ).respond(HttpResponse.response("OK").withStatusCode(200));
 
         File bundleFile = new File(tmpDir, "bundle.file");
         Files.write(bundleFile.toPath(), "test bundle".getBytes());
