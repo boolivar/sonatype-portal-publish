@@ -4,6 +4,8 @@ plugins {
 }
 
 gradlePlugin {
+    website = "https://github.com/boolivar/jdoc-test"
+    vcsUrl = "https://github.com/boolivar/jdoc-test.git"
     compatibility {
         minimumGradleVersion = "5.4"
     }
