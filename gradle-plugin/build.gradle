@@ -1,6 +1,7 @@
 plugins {
-    id "checkstyle"
     id "dev.gradleplugins.java-gradle-plugin" version "1.2"
+    id "jacoco"
+    id "checkstyle"
 }
 
 gradlePlugin {
@@ -27,6 +28,26 @@ checkstyle {
 
 tasks.named("test") {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+tasks.named("jacocoTestCoverageVerification") {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                minimum = jacocoMinRatio as BigDecimal
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn jacocoTestCoverageVerification
+}
+
+tasks.named("jar") {
+    dependsOn check
 }
 
 repositories {
