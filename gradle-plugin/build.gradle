@@ -4,6 +4,8 @@ plugins {
 }
 
 gradlePlugin {
+    website = "https://github.com/boolivar/sonatype-portal-publish"
+    vcsUrl = "https://github.com/boolivar/sonatype-portal-publish.git"
     compatibility {
         minimumGradleVersion = "5.4"
     }
