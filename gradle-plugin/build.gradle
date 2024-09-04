@@ -5,6 +5,8 @@ plugins {
     id "checkstyle"
 }
 
+description = "Plugin for publishing artifacts to Sonatype Maven Central using Portal Publisher API"
+
 gradlePlugin {
     website = "https://github.com/boolivar/sonatype-portal-publish"
     vcsUrl = "https://github.com/boolivar/sonatype-portal-publish.git"
@@ -15,8 +17,8 @@ gradlePlugin {
         sonatypePortalPublish {
             id = "io.github.boolivar.sonatype-portal-publish"
             implementationClass = "org.bool.sonatype.gradle.SonatypePortalPublishPlugin"
-            displayName = "Sonatype Portal Publisher"
-            description = "Plugin for publishing artifacts to Sonatype Maven Central using Portal Publisher API"
+            displayName = "Sonatype Central Portal publishing plugin"
+            description = project.description
             tags.addAll("Sonatype", "Central Portal", "maven", "publish")
         }
     }
@@ -25,9 +27,24 @@ gradlePlugin {
 publishing {
     publications {
         pluginMaven(MavenPublication) {
-            versionMapping {
-                allVariants {
-                    fromResolutionResult()
+            pom {
+                name = "$groupId:$artifactId"
+                description = project.description
+                url = "https://github.com/boolivar/sonatype-portal-publish"
+                inceptionYear = "2024"
+                licenses {
+                    license {
+                        name = "MIT License"
+                        url = "http://www.opensource.org/licenses/mit-license.php"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "boolivar"
+                        name = "Aleksey Krichevskiy"
+                        email = "boolivar@gmail.com"
+                        organizationUrl = "https://github.com/boolivar"
+                    }
                 }
             }
         }
