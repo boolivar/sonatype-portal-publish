@@ -3,6 +3,8 @@ package org.bool.sonatype.gradle;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.plugins.PublishingPlugin;
@@ -39,29 +41,35 @@ public class SonatypePortalPublishPlugin implements Plugin<Project> {
 
         ExtensionContainer extensions = project.getExtensions();
         extensions.getExtraProperties().set(SonatypePortalPublishTask.class.getSimpleName(), SonatypePortalPublishTask.class);
-        SonatypePortalPublishExtension extension = extensions.create(SonatypePortalPublishExtension.NAME, SonatypePortalPublishExtension.class);
-        extension.getDir().convention(project.getLayout().getBuildDirectory().dir(OUTPUT_DIR));
+        SonatypePortalPublishExtension sonatypePublish = extensions.create(SonatypePortalPublishExtension.NAME, SonatypePortalPublishExtension.class);
+        sonatypePublish.getDir().convention(project.getLayout().getBuildDirectory().dir(OUTPUT_DIR));
+
+        project.getPlugins().withType(JavaPlugin.class, javaPlugin -> {
+            JavaPluginExtension java = extensions.getByType(JavaPluginExtension.class);
+            java.withJavadocJar();
+            java.withSourcesJar();
+        });
 
         extensions.getByType(PublishingExtension.class).getRepositories().maven(repository -> {
             repository.setName(SONATYPE_STAGING_REPO);
-            repository.setUrl(extension.getStagingDir());
+            repository.setUrl(sonatypePublish.getStagingDir());
         });
 
         project.getTasks().register(SONATYPE_ZIP_TASK, Zip.class, zip -> {
             zip.dependsOn(SONATYPE_STAGING_TASK);
-            zip.from(extension.getStagingDir());
+            zip.from(sonatypePublish.getStagingDir());
             zip.exclude("**/maven-metadata.*");
             zip.getArchiveBaseName().set(project.getName());
-            zip.getDestinationDirectory().set(extension.getDir());
+            zip.getDestinationDirectory().set(sonatypePublish.getDir());
         });
 
         project.getTasks().register(SONATYPE_PUBLISH_TASK, SonatypePortalPublishTask.class, publish -> {
             publish.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
             publish.setDescription("Publishes Maven publication to Sonatype Maven Central using Portal Publisher API");
-            publish.getUrl().set(extension.getUrl());
-            publish.getAutoPublish().set(extension.getAutoPublish());
+            publish.getUrl().set(sonatypePublish.getUrl());
+            publish.getAutoPublish().set(sonatypePublish.getAutoPublish());
             publish.getBundle().set(project.getTasks().named(SONATYPE_ZIP_TASK, Zip.class).get().getArchiveFile());
-            publish.getBundleName().set(extension.getBundleName());
+            publish.getBundleName().set(sonatypePublish.getBundleName());
             publish.getToken().set(project.provider(() -> encodeToken(project)));
         });
 
