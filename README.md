@@ -2,6 +2,10 @@
 
 [Gradle](https://gradle.org/) plugin for publishing artifacts to [Sonatype Maven Central](https://central.sonatype.com/) using [Portal Publisher API](https://central.sonatype.org/publish/publish-portal-api/)
 
+## Requirements
+- min java version: 8
+- min gradle version: 6
+
 ## Java project setup example
 
 1. Configure plugin and publication
@@ -82,3 +86,6 @@ sonatypePublish {
 | `bundleName` | `String` |  | Optional deployment/bundle name, if not present Sonatype will use bundle file name |
 | `autoPublish` | `Boolean` | `false` | `true` to automatically proceed to publish to Maven Central, `false` to publish via the Portal UI |
 | `stagingDir` | `Directory` | `$dir/staging` | **(readonly)** Output directory for storing publication artifacts |
+
+## Reacting to the java plugin
+In order to enable javadoc and sources jars plugin invokes `withJavadocJar()` and `withSourcesJar()` on java extension when `java` plugin is applied to a project.
