@@ -89,3 +89,8 @@ sonatypePublish {
 
 ## Reacting to the java plugin
 In order to enable javadoc and sources jars plugin invokes `withJavadocJar()` and `withSourcesJar()` on java extension when `java` plugin is applied to a project.
+
+## Plugins autoconfiguration
+Following plugins automatically applied and configured:
+- [maven-publish](https://docs.gradle.org/current/userguide/publishing_maven.html) configured with `sonatypeStaging` maven repo to publish artifacts into local **staging** directory.
+- [signing](https://docs.gradle.org/current/userguide/signing_plugin.html) configured for signing all maven publicatons registered on publishing extension, `sonatypeSigningKey` and `sonatypeSigningSecret` project properties if available used to configure `useInMemoryPgpKeys`.
