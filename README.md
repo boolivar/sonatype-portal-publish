@@ -82,9 +82,9 @@ sonatypePublish {
 | Extension property | Type | Default value | Description |
 | ------------------ | ---- | ------------- | ----------- |
 | `dir` | `Directory` | `$buildDir/sonatypePublish` | Output directory for storing publication artifacts and bundle zip |
-| `url` | `String` | https://central.sonatype.com/api/v1/publisher/upload | Sonatype Publish Portal API [upload endpoint URL](https://central.sonatype.com/api-doc) |
 | `bundleName` | `String` |  | Optional deployment/bundle name, if not present Sonatype will use bundle file name |
 | `autoPublish` | `Boolean` | `false` | `true` to automatically proceed to publish to Maven Central, `false` to publish via the Portal UI |
+| `url` | `String` | https://central.sonatype.com/api/v1/publisher/upload | Sonatype Publish Portal API [upload endpoint URL](https://central.sonatype.com/api-doc) |
 | `stagingDir` | `Directory` | `$dir/staging` | **(readonly)** Output directory for storing publication artifacts |
 
 ## Reacting to the java plugin
@@ -94,3 +94,28 @@ In order to enable javadoc and sources jars plugin invokes `withJavadocJar()` an
 Following plugins automatically applied and configured:
 - [maven-publish](https://docs.gradle.org/current/userguide/publishing_maven.html) configured with `sonatypeStaging` maven repo to publish artifacts into local **staging** directory.
 - [signing](https://docs.gradle.org/current/userguide/signing_plugin.html) configured for signing all maven publicatons registered on publishing extension, `sonatypeSigningKey` and `sonatypeSigningSecret` project properties if available used to configure `useInMemoryPgpKeys`.
+
+## Tasks
+Plugin registers following tasks:
+- **sonatypeStagingZip** - `Zip`  
+_Depends on:_ `publishMavenPublicationToSonatypeStagingRepository`. Makes bundle zip from staged maven publication.
+- **publishToSonatype** - `SonatypePortalPublishTask`  
+_Depends on:_ `sonatypeStagingZip`. Uploads bundle zip onto Sonatype Central Repository using Portal Publisher API.
+
+## SonatypePortalPublishTask
+
+`build.gradle` example:
+```gradle
+tasks.register("customPublish", SonatypePortalPublishTask) {
+    bundle = file("$rootDir/settings.gradle")
+    token = authTokenProperty
+    autoPublish = true
+}
+```
+| Task property | Type | Required | Default value | Description |
+| ----------------- | ---- | ---- | ------------- | ----------- |
+| `bundle` | `File` | 🔴 | | File to upload |
+| `token` | `String` | 🔴  | | Authorization header bearer [token](https://central.sonatype.org/publish/publish-portal-api/#authentication-authorization) |
+| `bundleName` | `String` | | | Optional deployment/bundle name, if not present Sonatype will use bundle file name |
+| `autoPublish` | `Boolean` | | `false` | `true` to automatically proceed to publish to Maven Central, `false` to publish via the Portal UI |
+| `url` | `String` |  | https://central.sonatype.com/api/v1/publisher/upload | Sonatype Publish Portal API [upload endpoint URL](https://central.sonatype.com/api-doc) |
