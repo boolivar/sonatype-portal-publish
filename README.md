@@ -2,7 +2,9 @@
 
 [Gradle](https://gradle.org/) plugin for publishing artifacts to [Sonatype Maven Central](https://central.sonatype.com/) using [Portal Publisher API](https://central.sonatype.org/publish/publish-portal-api/)
 
-# Java project setup example
+## Java project setup example
+
+1. Configure plugin and publication
 
 `build.gradle`:
 
@@ -12,7 +14,8 @@ plugins {
     id "io.github.boolivar.sonatype-portal-publish" version "0.1.0"
 }
 
-group = "com.example.applications"
+group = "com.simpligility.training"
+version = "1.0"
 
 publishing {
     publications {
@@ -46,6 +49,7 @@ publishing {
     }
 }
 ```
+2. Setup sonatype [credentials](https://central.sonatype.org/publish/generate-portal-token/) and [signing](https://central.sonatype.org/publish/requirements/gpg/) key using project properties
 
 ```bash
 export ORG_GRADLE_PROJECT_sonatypeMavenCentralUser=<sonatype username>
@@ -53,7 +57,28 @@ export ORG_GRADLE_PROJECT_sonatypeMavenCentralPassword=<sonatype password>
 export ORG_GRADLE_PROJECT_sonatypeSigningKey=`cat ~/private-key.pem`
 export ORG_GRADLE_PROJECT_sonatypeSigningSecret=<signing secret>
 ```
+3. Run `publishToSonatype` gradle task
 
 ```bash
 ./gradlew publishToSonatype
 ```
+
+## sonatypePublish extension
+
+`build.gradle` example:
+
+```gradle
+sonatypePublish {
+    dir = "$buildDir/maven-central-publish"
+    bundleName = "awesome-publication"
+    autoPublish = true
+}
+```
+
+| Extension property | Type | Default value | Description |
+| ------------------ | ---- | ------------- | ----------- |
+| `dir` | `Directory` | `$buildDir/sonatypePublish` | Output directory for storing publication artifacts and bundle zip |
+| `url` | `String` | https://central.sonatype.com/api/v1/publisher/upload | Sonatype Publish Portal API [upload endpoint URL](https://central.sonatype.com/api-doc) |
+| `bundleName` | `String` |  | Optional deployment/bundle name, if not present Sonatype will use bundle file name |
+| `autoPublish` | `Boolean` | `false` | `true` to automatically proceed to publish to Maven Central, `false` to publish via the Portal UI |
+| `stagingDir` | `Directory` | `$dir/staging` | **(readonly)** Output directory for storing publication artifacts |
