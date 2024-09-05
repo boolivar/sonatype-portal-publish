@@ -73,7 +73,7 @@ export ORG_GRADLE_PROJECT_sonatypeSigningSecret=<signing secret>
 
 ```gradle
 sonatypePublish {
-    dir = "$buildDir/maven-central-publish"
+    dir = layout.buildDirectory.dir("maven-central-publish")
     bundleName = "awesome-publication"
     autoPublish = true
 }
