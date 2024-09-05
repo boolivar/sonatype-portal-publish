@@ -6,6 +6,7 @@ import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.bundling.Zip;
@@ -75,7 +76,7 @@ public class SonatypePortalPublishPlugin implements Plugin<Project> {
 
         project.afterEvaluate(prj -> {
             SigningExtension signing = prj.getExtensions().getByType(SigningExtension.class);
-            signing.sign(prj.getExtensions().getByType(PublishingExtension.class).getPublications());
+            signing.sign(prj.getExtensions().getByType(PublishingExtension.class).getPublications().matching(MavenPublication.class::isInstance));
             if (prj.findProperty(SIGNING_KEY_PROPERTY) != null) {
                 signing.useInMemoryPgpKeys((String) prj.property(SIGNING_KEY_PROPERTY), (String) prj.property(SIGNING_SECRET_PROPERTY));
             }
