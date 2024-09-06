@@ -24,6 +24,7 @@ jobs:
         name: reports
         path: '**/build/reports/**/*'
     - name: Release
+      id: release
       if: ${{ github.ref_name == 'master' || startsWith(github.ref_name, 'release/') }}
       uses: google-github-actions/release-please-action@v4.1.0
       with:
