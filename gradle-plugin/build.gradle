@@ -87,7 +87,7 @@ repositories {
 dependencies {
     testImplementation gradleTestKit()
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
-    testImplementation "org.assertj:assertj-core:3.26.3"
+    testImplementation "org.assertj:assertj-core:3.27.0"
     testImplementation "org.mockito:mockito-junit-jupiter:5.14.2"
     testImplementation "org.mock-server:mockserver-junit-jupiter:5.15.0"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
